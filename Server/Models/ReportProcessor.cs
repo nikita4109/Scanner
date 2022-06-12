@@ -4,58 +4,56 @@ using Entities;
 
 namespace Server.Models
 {
-    public class ReportProcessor
+    public class ReportProcessor : IReportProcessor
     {
-        private readonly Report _report;
+        protected readonly Report Report;
 
-        public static Report Process(Report report)
+        public Report Process()
         {
-            var processor = new ReportProcessor(report);
-
             Stopwatch timer = Stopwatch.StartNew();
-            processor.Process();
+            ProcessDirectory(Report.Directory);
             timer.Stop();
 
-            report.ExecutionTime = timer.Elapsed.ToString();
+            Report.ExecutionTime = timer.Elapsed.ToString();
 
-            return report;
+            return Report;
         }
 
-        private ReportProcessor(Report report)
+        public ReportProcessor(Report report)
         {
-            _report = report;
+            Report = report;
         }
 
         /// <summary>
         /// Processing all files in the directory.
         /// </summary>
-        private void Process()
+        private void ProcessDirectory(string directory)
         {
             try
             {
-                var fileNames = Directory.GetFiles(_report.Directory, "*", SearchOption.AllDirectories);
+                var fileNames = Directory.GetFiles(directory, "*", SearchOption.AllDirectories);
                 foreach (var fileName in fileNames)
                 {
                     FileInfo fileInfo = new FileInfo(fileName);
-                    ++_report.FilesCount;
+                    ++Report.FilesCount;
 
                     ProcessFile(fileInfo);
                 }
             }
             catch
             {
-                ++_report.ErrorsCount;
+                ++Report.ErrorsCount;
             }
         }
 
-        protected void ProcessFile(FileInfo fileInfo)
+        protected virtual void ProcessFile(FileInfo fileInfo)
         {
             int count = 0;
             var ahoCorasick = new AhoCorasick();
 
             try
             {
-                foreach (var suspicious in _report.Suspicious)
+                foreach (var suspicious in Report.Suspicious)
                 {
                     // Checks if suspicious needs special extension.
                     if (suspicious.Extensions.Count > 0 && !suspicious.Extensions.Contains(fileInfo.Extension))
@@ -73,7 +71,7 @@ namespace Server.Models
             }
             catch
             {
-                ++_report.ErrorsCount;
+                ++Report.ErrorsCount;
             }
         }
     }

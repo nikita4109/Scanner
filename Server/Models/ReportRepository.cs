@@ -8,10 +8,11 @@ namespace Server.Models
     public class ReportRepository : IReportRepository
     {
         private readonly List<Task<Report>> _tasks;
-
+        
         public ReportRepository()
         {
             _tasks = new List<Task<Report>>();
+
         }
 
         public Optional<Report> GetReport(int id)
@@ -23,7 +24,11 @@ namespace Server.Models
 
         public int Add(Report report)
         {
-            var task = Task.Run(() => ReportProcessor.Process(report));
+            var task = Task.Run(() =>
+            {
+                var processor = new ReportProcessor(report);
+                return processor.Process();
+            });
 
             _tasks.Add(task);
             return _tasks.Count - 1;
